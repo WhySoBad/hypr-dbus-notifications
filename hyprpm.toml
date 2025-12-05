@@ -1,0 +1,14 @@
+[repository]
+name = "dbus-notifications"
+authors = "wysbd"
+commit_pins = [
+    # v Hyprland                                  v hypr-dbus-notifications
+]
+
+[dbus-notifications]
+description = "transform Hyprland notifications to dbus notifications"
+authors = ["wysbd"]
+output = "out/dbus-notifications.so"
+build = [
+    "make all",
+]
