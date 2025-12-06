@@ -12,7 +12,7 @@ public:
   std::unique_ptr<sdbus::IProxy> pNotificationProxy = nullptr;
 
   CDbus();
-
+  void connect();
   /*
    * Send a notification to the org.freedesktop.Notifications dbus interface
    * Returns 0 when the dbus connection/proxy is not available
@@ -20,6 +20,5 @@ public:
    * @see https://specifications.freedesktop.org/notification/1.2/protocol.html
    */
   uint32_t sendNotification(const std::string &body, const int32_t timeout, const Urgency urgency);
-
   const bool isAvailable();
 };

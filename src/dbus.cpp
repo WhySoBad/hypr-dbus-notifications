@@ -1,27 +1,13 @@
 #include "dbus.hpp"
-#include "globals.hpp"
-#include <hyprland/src/plugins/PluginAPI.hpp>
-#include <sdbus-c++/Error.h>
 #include <sdbus-c++/IProxy.h>
 #include <sdbus-c++/Types.h>
 #include <vector>
 
-CDbus::CDbus() {
-  try {
-    pConnection = sdbus::createSessionBusConnection();
-  } catch (sdbus::Error &err) {
-    HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to connect to dbus session bus", CHyprColor{1.0, 0.2, 0.2, 1.0}, 5000);
-    Debug::log(ERR, "[dbus-notifications] Unable to connect to dbus session bus: {} - {}", err.getName().c_str(), err.getMessage());
-    return;
-  }
+CDbus::CDbus() { connect(); }
 
-  try {
-    pNotificationProxy = sdbus::createProxy(*pConnection, sdbus::BusName("org.freedesktop.Notifications"), sdbus::ObjectPath("/org/freedesktop/Notifications"));
-  } catch (sdbus::Error &err) {
-    HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to create dbus notifications proxy", CHyprColor{1.0, 0.2, 0.2, 1.0}, 5000);
-    Debug::log(ERR, "[dbus-notifications] Unable to create dbus notifications proxy: {} - {}", err.getName().c_str(), err.getMessage());
-    return;
-  }
+void CDbus::connect() {
+  pConnection = sdbus::createSessionBusConnection();
+  pNotificationProxy = sdbus::createProxy(*pConnection, sdbus::BusName("org.freedesktop.Notifications"), sdbus::ObjectPath("/org/freedesktop/Notifications"));
 }
 
 uint32_t CDbus::sendNotification(const std::string &body, const int32_t timeout, const Urgency urgency) {

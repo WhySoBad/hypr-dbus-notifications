@@ -2,7 +2,7 @@
 
 This plugin transforms your inbuilt Hyprland notifications into dbus notifications which can be displayed using the notification service of your choice.
 
-<img width="2556" height="624" alt="image" src="https://github.com/user-attachments/assets/2102f986-1c88-4904-8fd6-dbb700712f13" />
+![](https://github.com/user-attachments/assets/2102f986-1c88-4904-8fd6-dbb700712f13)
 
 ## Installation
 
