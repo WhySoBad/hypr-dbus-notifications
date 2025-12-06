@@ -19,6 +19,6 @@ public:
    *
    * @see https://specifications.freedesktop.org/notification/1.2/protocol.html
    */
-  uint32_t sendNotification(const std::string &body, const int32_t timeout, const Urgency urgency);
+  uint32_t sendNotification(const std::string &body, const int32_t timeout, const std::string icon, const Urgency urgency);
   const bool isAvailable();
 };

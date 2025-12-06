@@ -1,10 +1,10 @@
-#include "dbus.hpp"
+#include "src/SharedDefs.hpp"
 #include "src/debug/Log.hpp"
-#include <cmath>
 #include <cstdint>
 #include <format>
+#include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
-#include <memory>
+#include <hyprlang.hpp>
 #include <sdbus-c++/Error.h>
 #include <stdexcept>
 #include <string>
@@ -12,11 +12,6 @@
 #include "globals.hpp"
 #include "src/desktop/DesktopTypes.hpp"
 #include "src/helpers/Color.hpp"
-
-const CHyprColor errorColor = CHyprColor{1.0, 0.2, 0.2, 1.0};
-const uint32_t errorTimeoutMs = 5000;
-
-std::unique_ptr<CDbus> g_pDbus = nullptr;
 
 const std::string addNotificationSignatureDemangled =
     "CHyprNotificationOverlay::addNotification(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, CHyprColor const&, float, eIcons, float)";
@@ -28,9 +23,11 @@ void hkAddNotification(void *thisptr, const std::string &text, const CHyprColor 
     return;
   }
 
+  SIconMapping mapping = g_iconMappings.contains(icon) ? g_iconMappings.at(icon) : SIconMapping{.urgency = icon == ICON_ERROR ? Urgency::Critical : Urgency::Normal};
+
   try {
     // send notification to dbus interface
-    g_pDbus->sendNotification(text, (int32_t)round(timeMs), Urgency::Critical);
+    g_pDbus->sendNotification(text, (int32_t)round(timeMs), mapping.icon, mapping.urgency);
   } catch (sdbus::Error &err) {
     Debug::log(ERR, "[dbus-notifications] Unable to send dbus notification: {} - {}", err.getName().c_str(), err.getMessage());
   }
@@ -46,6 +43,64 @@ void hkDraw(void *thisptr, PHLMONITOR monitor) {
   }
   // we don't need to do anything, just ensure the original draw function is never
   // executed in order to never allocate the cairo surface
+}
+
+Hyprlang::CParseResult onNewIconMapping(const char *command, const char *value) {
+  std::string value_str = value;
+  CVarList vars(value_str);
+
+  Hyprlang::CParseResult result;
+
+  eIcons variant;
+  SIconMapping mapping;
+
+  // icon_mapping = <icon_variant>, icon:<notification_icon>, urgency:<notification_urgency>
+  if (vars[0].empty()) {
+    result.setError("icon variant cannot be empty");
+    return result;
+  } else {
+    if (vars[0] == "warning")
+      variant = ICON_WARNING;
+    else if (vars[0] == "info")
+      variant = ICON_INFO;
+    else if (vars[0] == "hint")
+      variant = ICON_HINT;
+    else if (vars[0] == "error")
+      variant = ICON_ERROR;
+    else if (vars[0] == "confused")
+      variant = ICON_CONFUSED;
+    else if (vars[0] == "ok")
+      variant = ICON_OK;
+    else if (vars[0] == "none")
+      variant = ICON_NONE;
+    else {
+      result.setError(std::format("got invalid icon variant {}: expected either warning, info, hint, error, confused, ok or none", vars[0]).c_str());
+      return result;
+    }
+  }
+
+  for (auto &var : std::ranges::subrange(vars.begin() + 1, vars.end())) {
+    if (var.starts_with("urgency:")) {
+      auto urgency_val = var.substr(8);
+      if (urgency_val == "low")
+        mapping.urgency = Urgency::Low;
+      else if (urgency_val == "normal")
+        mapping.urgency = Urgency::Normal;
+      else if (urgency_val == "critical")
+        mapping.urgency = Urgency::Critical;
+      else {
+        result.setError(std::format("got invalid urgency {}: expected either low, normal or critical", urgency_val).c_str());
+        return result;
+      }
+    } else if (var.starts_with("icon:")) {
+      auto icon_val = var.substr(5);
+      mapping.icon = icon_val;
+    }
+  }
+
+  g_iconMappings.insert_or_assign(variant, mapping);
+
+  return result;
 }
 
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
@@ -89,6 +144,12 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
       HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to hook into CHyprNotificationOverlay::draw function", errorColor, errorTimeoutMs);
       throw std::runtime_error(std::format("Unable to hook into {} function", drawSignatureDemangled));
     }
+  }
+
+  // add config
+  if (!HyprlandAPI::addConfigKeyword(PHANDLE, CONFIG_KEYWORD_ICON_MAPPING, onNewIconMapping, Hyprlang::SHandlerOptions{})) {
+    HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to add icon_map config keyword", errorColor, errorTimeoutMs);
+    throw std::runtime_error("Unable to add icon_map config keyword");
   }
 
   // init dbus

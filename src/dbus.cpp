@@ -10,7 +10,7 @@ void CDbus::connect() {
   pNotificationProxy = sdbus::createProxy(*pConnection, sdbus::BusName("org.freedesktop.Notifications"), sdbus::ObjectPath("/org/freedesktop/Notifications"));
 }
 
-uint32_t CDbus::sendNotification(const std::string &body, const int32_t timeout, const Urgency urgency) {
+uint32_t CDbus::sendNotification(const std::string &body, const int32_t timeout, const std::string icon, const Urgency urgency) {
   if (!isAvailable())
     return 0;
 
@@ -24,7 +24,7 @@ uint32_t CDbus::sendNotification(const std::string &body, const int32_t timeout,
   pNotificationProxy->callMethod("Notify")
       .onInterface("org.freedesktop.Notifications")
       // app_name, replaced_id, icon_name, title, body, actions, hints, timeout
-      .withArguments("Hyprland", 0u, "", "Hyprland", body, actions, hints, timeout)
+      .withArguments("Hyprland", 0u, icon, "Hyprland", body, actions, hints, timeout)
       .storeResultsTo(id);
   return id;
 }
