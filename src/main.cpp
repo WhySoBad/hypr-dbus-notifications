@@ -1,5 +1,4 @@
 #include "src/SharedDefs.hpp"
-#include "src/debug/Log.hpp"
 #include <cstdint>
 #include <format>
 #include <hyprland/src/config/ConfigManager.hpp>
@@ -10,7 +9,6 @@
 #include <string>
 
 #include "globals.hpp"
-#include "src/desktop/DesktopTypes.hpp"
 #include "src/helpers/Color.hpp"
 
 const std::string addNotificationSignatureDemangled =
@@ -29,7 +27,7 @@ void hkAddNotification(void *thisptr, const std::string &text, const CHyprColor 
     // send notification to dbus interface
     g_pDbus->sendNotification(text, (int32_t)round(timeMs), mapping.icon, mapping.urgency);
   } catch (sdbus::Error &err) {
-    Debug::log(ERR, "[dbus-notifications] Unable to send dbus notification: {} - {}", err.getName().c_str(), err.getMessage());
+    Log::logger->log(Log::ERR, "[dbus-notifications] Unable to send dbus notification: {} - {}", err.getName().c_str(), err.getMessage());
   }
 }
 
