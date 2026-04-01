@@ -4,6 +4,7 @@
 #include <hyprland/src/config/ConfigManager.hpp>
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprlang.hpp>
+#include <hyprutils/string/VarList.hpp>
 #include <sdbus-c++/Error.h>
 #include <stdexcept>
 #include <string>
@@ -45,7 +46,7 @@ void hkDraw(void *thisptr, PHLMONITOR monitor) {
 
 Hyprlang::CParseResult onNewIconMapping(const char *command, const char *value) {
   std::string value_str = value;
-  CVarList vars(value_str);
+  Hyprutils::String::CVarList vars(value_str);
 
   Hyprlang::CParseResult result;
 
