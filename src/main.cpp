@@ -12,8 +12,8 @@
 #include "globals.hpp"
 #include "src/helpers/Color.hpp"
 
-const std::string addNotificationSignatureDemangled =
-    "CHyprNotificationOverlay::addNotification(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&, CHyprColor const&, float, eIcons, float)";
+const std::string addNotificationSignatureMangled =
+    "_ZN12Notification20CNotificationOverlay15addNotificationERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERK10CHyprColorf6eIconsf";
 typedef void (*origAddNotification)(void *, const std::string &, const CHyprColor &, const float, const eIcons, const float);
 inline CFunctionHook *g_pAddNotificationHook = nullptr;
 void hkAddNotification(void *thisptr, const std::string &text, const CHyprColor &color, const float timeMs, const eIcons icon, const float fontSize) {
@@ -32,7 +32,7 @@ void hkAddNotification(void *thisptr, const std::string &text, const CHyprColor 
   }
 }
 
-const std::string drawSignatureDemangled = "CHyprNotificationOverlay::draw(Hyprutils::Memory::CSharedPointer<CMonitor>)";
+const std::string drawSignatureMangled = "_ZN12Notification20CNotificationOverlay4drawEN9Hyprutils6Memory14CSharedPointerI8CMonitorEE";
 typedef void (*origDraw)(void *, PHLMONITOR);
 inline CFunctionHook *g_pDrawHook = nullptr;
 void hkDraw(void *thisptr, PHLMONITOR monitor) {
@@ -114,34 +114,35 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
   }
 
   // hook functions
-  static const auto NOTIFICATION_OVERLAY_METHODS = HyprlandAPI::findFunctionsByName(PHANDLE, "CHyprNotificationOverlay");
+  static const auto NOTIFICATION_OVERLAY_METHODS = HyprlandAPI::findFunctionsByName(PHANDLE, "CNotificationOverlay");
 
   for (auto &method : NOTIFICATION_OVERLAY_METHODS) {
-    if (!g_pAddNotificationHook && method.demangled == addNotificationSignatureDemangled) {
+    if (!g_pAddNotificationHook && method.signature == addNotificationSignatureMangled) {
+        HyprlandAPI::addNotification(PHANDLE, "bound", errorColor, 100000);
       g_pAddNotificationHook = HyprlandAPI::createFunctionHook(handle, method.address, (void *)&hkAddNotification);
     }
-    if (!g_pDrawHook && method.demangled == drawSignatureDemangled) {
+    if (!g_pDrawHook && method.signature == drawSignatureMangled) {
       g_pDrawHook = HyprlandAPI::createFunctionHook(handle, method.address, (void *)&hkDraw);
     }
   }
 
   if (!g_pAddNotificationHook) {
-    HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Found no function which matches CHyprNotificationOverlay::addNotification signature", errorColor, errorTimeoutMs);
-    throw std::runtime_error(std::format("Found no function which matches {} signature", addNotificationSignatureDemangled));
+    HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Found no function which matches CNotificationOverlay::addNotification signature", errorColor, errorTimeoutMs);
+    throw std::runtime_error(std::format("Found no function which matches {} signature", addNotificationSignatureMangled));
   } else {
     if (!g_pAddNotificationHook->hook()) {
-      HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to hook into CHyprNotificationOverlay::addNotification function", errorColor, errorTimeoutMs);
-      throw std::runtime_error(std::format("Unable to hook into {} function", addNotificationSignatureDemangled));
+      HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to hook into CNotificationOverlay::addNotification function", errorColor, errorTimeoutMs);
+      throw std::runtime_error(std::format("Unable to hook into {} function", addNotificationSignatureMangled));
     }
   }
 
   if (!g_pDrawHook) {
-    HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Found no function which matches CHyprNotificationOverlay::draw signature", errorColor, errorTimeoutMs);
-    throw std::runtime_error(std::format("Found no function which matches {} signature", drawSignatureDemangled));
+    HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Found no function which matches CNotificationOverlay::draw signature", errorColor, errorTimeoutMs);
+    throw std::runtime_error(std::format("Found no function which matches {} signature", drawSignatureMangled));
   } else {
     if (!g_pDrawHook->hook()) {
-      HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to hook into CHyprNotificationOverlay::draw function", errorColor, errorTimeoutMs);
-      throw std::runtime_error(std::format("Unable to hook into {} function", drawSignatureDemangled));
+      HyprlandAPI::addNotification(PHANDLE, "[dbus-notifications] Unable to hook into CNotificationOverlay::draw function", errorColor, errorTimeoutMs);
+      throw std::runtime_error(std::format("Unable to hook into {} function", drawSignatureMangled));
     }
   }
 
